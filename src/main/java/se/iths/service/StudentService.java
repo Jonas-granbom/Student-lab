@@ -18,6 +18,10 @@ public class StudentService {
         entityManager.persist(student);
     }
 
+    public List<Student> findAllStudents() {
+        return entityManager.createQuery("SELECT s FROM Student s", Student.class).getResultList();
+    }
+
     public void updateStudent(Student student) {
         entityManager.merge(student);
     }
@@ -26,24 +30,27 @@ public class StudentService {
         return entityManager.find(Student.class, id);
     }
 
-    public List<Student> getAllStudents() {
-        return entityManager.createQuery("SELECT i from Student I", Student.class).getResultList();
-    }
 
     public void deleteStudent(Long id) {
         Student foundStudent = entityManager.find(Student.class, id);
         entityManager.remove(foundStudent);
     }
-    public List<Student> getStudentByLastName(String lastName){
+
+    public List<Student> getStudentByLastName(String lastName) {
         TypedQuery<Student> query = entityManager.createQuery("SELECT s FROM Student s WHERE s.lastName = ?1", Student.class);
-        List<Student> foundStudents = query.setParameter(1, lastName).getResultList();
 
-        return foundStudents;
+        return query.setParameter(1, lastName).getResultList();
     }
 
-    public Student updateLastName(Long id, String lastName) {
-        Student foundStudent = entityManager.find(Student.class, id);
-        foundStudent.setLastName(lastName);
-        return foundStudent;
+    public boolean boolEmailAvailableCheck(String email) {
+        List<String> emailList = entityManager.createQuery("SELECT s.email FROM Student s", String.class).getResultList();
+        for (String emails : emailList) {
+            if (emails.equalsIgnoreCase(email)) {
+                return true;
+            }
+        }
+        return false;
     }
+
+
 }

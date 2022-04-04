@@ -20,16 +20,43 @@ public class StudentRest {
     @Path("")
     @POST
     public Response createStudent(Student student) {
+        if(studentService.boolEmailAvailableCheck(student.getEmail())){
+            return Response.status(Response.Status.CONFLICT)
+                    .entity("Email is already in use")
+                    .type(MediaType.TEXT_PLAIN_TYPE).build();
+        }
         studentService.createStudent(student);
-        return Response.ok(student).build();
+        return Response.ok(student).entity("Student created").type(MediaType.TEXT_PLAIN_TYPE).build();
     }
 
     @Path("")
-    @PUT
-    public Response updateStudent(Student student) {
-        studentService.updateStudent(student);
-        return Response.ok(student).build();
+    @GET
+    public Response getAllStudents() {
+        return Response.ok(studentService.findAllStudents()).build();
     }
+
+    @Path("{id}")
+    @PATCH
+    public Response updateStudent(@PathParam("id") Long id, Student student) {
+        Student foundStudent = studentService.findStudentById(id);
+
+        if (foundStudent == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("Student with ID: " + id + " is not currently in the database").type(MediaType.TEXT_PLAIN_TYPE).build();
+        }
+        if (student.getFirstName() != null) foundStudent.setFirstName(student.getFirstName());
+
+        if (student.getLastName() != null) foundStudent.setLastName(student.getLastName());
+
+        if (student.getEmail() != null) foundStudent.setEmail(student.getEmail());
+
+        if (student.getPhoneNumber() != null) foundStudent.setPhoneNumber(student.getPhoneNumber());
+
+        studentService.updateStudent(foundStudent);
+
+        return Response.ok(foundStudent).build();
+    }
+
 
     @Path("{id}")
     @GET
@@ -45,28 +72,25 @@ public class StudentRest {
     @GET
     public Response getStudentByLastName(@QueryParam("lastname") String lastName) {
         List<Student> foundStudents = studentService.getStudentByLastName(lastName);
+        if (foundStudents.size() == 0) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("No students with lastname " + lastName + " were found in the DB").type(MediaType.TEXT_PLAIN_TYPE).build();
+        }
         return Response.ok(foundStudents).build();
     }
 
-    @Path("")
-    @GET
-    public Response getAllStudents() {
-        List<Student> foundStudents = studentService.getAllStudents();
-        return Response.ok(foundStudents).build();
-    }
 
-    @Path("{id}")
-    @PATCH
-    public Response updateLastName(@PathParam("id") Long id, Student student) {
-        Student updateStudent = studentService.updateLastName(id, student.getLastName());
-        return Response.ok(updateStudent).build();
-    }
 
     @Path("{id}")
     @DELETE
     public Response deleteStudent(@PathParam("id") Long id) {
+        Student foundStudent = studentService.findStudentById(id);
+        if (foundStudent == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("No student with ID:  " + id + " were found in the DB").type(MediaType.TEXT_PLAIN_TYPE).build();
+        }
         studentService.deleteStudent(id);
-        return Response.ok().build();
+        return Response.ok().entity("Deleted student with ID: " + id).type(MediaType.TEXT_PLAIN_TYPE).build();
     }
 
 

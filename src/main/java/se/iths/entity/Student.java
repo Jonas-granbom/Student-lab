@@ -2,28 +2,20 @@ package se.iths.entity;
 
 
 import javax.persistence.*;
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
 
 @Entity
 public class Student {
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Id @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
-
-    @NotNull
+    @NotNull @NotBlank
     private String firstName;
-    @NotNull
+    @NotNull @NotBlank
     private String lastName;
-
-
-
-
-
-    @NotNull
-
+    @NotNull @NotBlank
     private String email;
-
     private String phoneNumber;
 
     public Student() {
