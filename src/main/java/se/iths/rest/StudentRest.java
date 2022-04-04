@@ -20,42 +20,35 @@ public class StudentRest {
     @Path("")
     @POST
     public Response createStudent(Student student) {
-        if(studentService.boolEmailAvailableCheck(student.getEmail())){
+        if (studentService.boolEmailAvailableCheck(student.getEmail())) {
             return Response.status(Response.Status.CONFLICT)
                     .entity("Email is already in use")
                     .type(MediaType.TEXT_PLAIN_TYPE).build();
         }
-        studentService.createStudent(student);
+        try {
+            studentService.createStudent(student);
+        } catch (Exception e) {
+            throw new WebApplicationException(Response.status(Response.Status.NOT_ACCEPTABLE)
+                    .entity("All fields are required, Exception: " + e)
+                    .type(MediaType.TEXT_PLAIN_TYPE).build());
+        }
+
         return Response.ok(student).entity("Student created").type(MediaType.TEXT_PLAIN_TYPE).build();
     }
 
     @Path("")
     @GET
     public Response getAllStudents() {
+        List<Student> foundStudents = studentService.findAllStudents();
+        if (foundStudents.isEmpty()) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("No students in database")
+                    .type(MediaType.TEXT_PLAIN_TYPE).build();
+        }
         return Response.ok(studentService.findAllStudents()).build();
     }
 
-    @Path("{id}")
-    @PATCH
-    public Response updateStudent(@PathParam("id") Long id, Student student) {
-        Student foundStudent = studentService.findStudentById(id);
 
-        if (foundStudent == null) {
-            return Response.status(Response.Status.NOT_FOUND)
-                    .entity("Student with ID: " + id + " is not currently in the database").type(MediaType.TEXT_PLAIN_TYPE).build();
-        }
-        if (student.getFirstName() != null) foundStudent.setFirstName(student.getFirstName());
-
-        if (student.getLastName() != null) foundStudent.setLastName(student.getLastName());
-
-        if (student.getEmail() != null) foundStudent.setEmail(student.getEmail());
-
-        if (student.getPhoneNumber() != null) foundStudent.setPhoneNumber(student.getPhoneNumber());
-
-        studentService.updateStudent(foundStudent);
-
-        return Response.ok(foundStudent).build();
-    }
 
 
     @Path("{id}")
@@ -63,7 +56,9 @@ public class StudentRest {
     public Response findStudentById(@PathParam("id") Long id) {
         Student foundStudent = studentService.findStudentById(id);
         if (foundStudent == null) {
-            throw new WebApplicationException(Response.status(Response.Status.NOT_FOUND).entity("Student with ID " + id + " not found in DB").type(MediaType.TEXT_PLAIN_TYPE).build());
+            throw new WebApplicationException(Response.status(Response.Status.NOT_FOUND)
+                    .entity("Student with ID " + id + " not found in database")
+                    .type(MediaType.TEXT_PLAIN_TYPE).build());
         }
         return Response.ok(foundStudent).build();
     }
@@ -74,12 +69,31 @@ public class StudentRest {
         List<Student> foundStudents = studentService.getStudentByLastName(lastName);
         if (foundStudents.size() == 0) {
             return Response.status(Response.Status.NOT_FOUND)
-                    .entity("No students with lastname " + lastName + " were found in the DB").type(MediaType.TEXT_PLAIN_TYPE).build();
+                    .entity("No students with lastname " + lastName + " were found in the database")
+                    .type(MediaType.TEXT_PLAIN_TYPE).build();
         }
         return Response.ok(foundStudents).build();
     }
 
+    @Path("{id}")
+    @PATCH
+    public Response updateStudent(@PathParam("id") Long id, Student student) {
+        Student foundStudent = studentService.findStudentById(id);
 
+        if (foundStudent == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("Student with ID: " + id + " is not currently in the database")
+                    .type(MediaType.TEXT_PLAIN_TYPE).build();
+        }
+        if (student.getFirstName() != null) foundStudent.setFirstName(student.getFirstName());
+        if (student.getLastName() != null) foundStudent.setLastName(student.getLastName());
+        if (student.getEmail() != null) foundStudent.setEmail(student.getEmail());
+        if (student.getPhoneNumber() != null) foundStudent.setPhoneNumber(student.getPhoneNumber());
+
+        studentService.updateStudent(foundStudent);
+
+        return Response.ok(foundStudent).build();
+    }
 
     @Path("{id}")
     @DELETE
@@ -87,7 +101,7 @@ public class StudentRest {
         Student foundStudent = studentService.findStudentById(id);
         if (foundStudent == null) {
             return Response.status(Response.Status.NOT_FOUND)
-                    .entity("No student with ID:  " + id + " were found in the DB").type(MediaType.TEXT_PLAIN_TYPE).build();
+                    .entity("No student with ID:  " + id + " were found in the database").type(MediaType.TEXT_PLAIN_TYPE).build();
         }
         studentService.deleteStudent(id);
         return Response.ok().entity("Deleted student with ID: " + id).type(MediaType.TEXT_PLAIN_TYPE).build();

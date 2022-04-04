@@ -30,7 +30,6 @@ public class StudentService {
         return entityManager.find(Student.class, id);
     }
 
-
     public void deleteStudent(Long id) {
         Student foundStudent = entityManager.find(Student.class, id);
         entityManager.remove(foundStudent);
@@ -38,7 +37,6 @@ public class StudentService {
 
     public List<Student> getStudentByLastName(String lastName) {
         TypedQuery<Student> query = entityManager.createQuery("SELECT s FROM Student s WHERE s.lastName = ?1", Student.class);
-
         return query.setParameter(1, lastName).getResultList();
     }
 
@@ -51,6 +49,4 @@ public class StudentService {
         }
         return false;
     }
-
-
 }
