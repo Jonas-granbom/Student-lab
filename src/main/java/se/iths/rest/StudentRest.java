@@ -2,6 +2,7 @@ package se.iths.rest;
 
 
 import se.iths.entity.Student;
+import se.iths.entity.Subject;
 import se.iths.service.StudentService;
 
 import javax.inject.Inject;
@@ -23,17 +24,22 @@ public class StudentRest {
         if (studentService.boolEmailAvailableCheck(student.getEmail())) {
             return Response.status(Response.Status.CONFLICT)
                     .entity("Email is already in use")
-                    .type(MediaType.TEXT_PLAIN_TYPE).build();
+                    .type(MediaType.TEXT_PLAIN_TYPE)
+                    .build();
         }
         try {
             studentService.createStudent(student);
         } catch (Exception e) {
             throw new WebApplicationException(Response.status(Response.Status.NOT_ACCEPTABLE)
                     .entity("All fields are required, Exception: " + e)
-                    .type(MediaType.TEXT_PLAIN_TYPE).build());
+                    .type(MediaType.TEXT_PLAIN_TYPE)
+                    .build());
         }
 
-        return Response.ok(student).entity("Student created").type(MediaType.TEXT_PLAIN_TYPE).build();
+        return Response.ok(student)
+                .entity("Student created")
+                .type(MediaType.TEXT_PLAIN_TYPE)
+                .build();
     }
 
     @Path("")
@@ -43,12 +49,12 @@ public class StudentRest {
         if (foundStudents.isEmpty()) {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity("No students in database")
-                    .type(MediaType.TEXT_PLAIN_TYPE).build();
+                    .type(MediaType.TEXT_PLAIN_TYPE)
+                    .build();
         }
-        return Response.ok(studentService.findAllStudents()).build();
+        return Response.ok(studentService.findAllStudents())
+                .build();
     }
-
-
 
 
     @Path("{id}")
@@ -58,9 +64,11 @@ public class StudentRest {
         if (foundStudent == null) {
             throw new WebApplicationException(Response.status(Response.Status.NOT_FOUND)
                     .entity("Student with ID " + id + " not found in database")
-                    .type(MediaType.TEXT_PLAIN_TYPE).build());
+                    .type(MediaType.TEXT_PLAIN_TYPE)
+                    .build());
         }
-        return Response.ok(foundStudent).build();
+        return Response.ok(foundStudent)
+                .build();
     }
 
     @Path("query")
@@ -70,9 +78,11 @@ public class StudentRest {
         if (foundStudents.size() == 0) {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity("No students with lastname " + lastName + " were found in the database")
-                    .type(MediaType.TEXT_PLAIN_TYPE).build();
+                    .type(MediaType.TEXT_PLAIN_TYPE)
+                    .build();
         }
-        return Response.ok(foundStudents).build();
+        return Response.ok(foundStudents)
+                .build();
     }
 
     @Path("{id}")
@@ -83,7 +93,8 @@ public class StudentRest {
         if (foundStudent == null) {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity("Student with ID: " + id + " is not currently in the database")
-                    .type(MediaType.TEXT_PLAIN_TYPE).build();
+                    .type(MediaType.TEXT_PLAIN_TYPE)
+                    .build();
         }
         if (student.getFirstName() != null) foundStudent.setFirstName(student.getFirstName());
         if (student.getLastName() != null) foundStudent.setLastName(student.getLastName());
@@ -92,7 +103,8 @@ public class StudentRest {
 
         studentService.updateStudent(foundStudent);
 
-        return Response.ok(foundStudent).build();
+        return Response.ok(foundStudent)
+                .build();
     }
 
     @Path("{id}")
@@ -103,9 +115,20 @@ public class StudentRest {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity("No student with ID:  " + id + " were found in the database").type(MediaType.TEXT_PLAIN_TYPE).build();
         }
+        for (Subject subject : studentService.findAllSubjects()) {
+            for (Student student : subject.getStudents()) {
+                if (student.getId() == foundStudent.getId()) {
+                    throw new WebApplicationException(Response.status(Response.Status.CONFLICT)
+                            .entity("To delete a student assigned to a subject, first remove it from the subject")
+                            .type(MediaType.TEXT_PLAIN_TYPE)
+                            .build());
+                }
+            }
+        }
+
         studentService.deleteStudent(id);
-        return Response.ok().entity("Deleted student with ID: " + id).type(MediaType.TEXT_PLAIN_TYPE).build();
+        return Response.ok().entity("Deleted student with ID: " + id)
+                .type(MediaType.TEXT_PLAIN_TYPE)
+                .build();
     }
-
-
 }

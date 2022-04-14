@@ -1,6 +1,7 @@
 package se.iths.service;
 
 import se.iths.entity.Student;
+import se.iths.entity.Subject;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -38,6 +39,9 @@ public class StudentService {
     public List<Student> getStudentByLastName(String lastName) {
         TypedQuery<Student> query = entityManager.createQuery("SELECT s FROM Student s WHERE s.lastName = ?1", Student.class);
         return query.setParameter(1, lastName).getResultList();
+    }
+    public List<Subject> findAllSubjects() {
+        return entityManager.createQuery("SELECT s from Subject s", Subject.class).getResultList();
     }
 
     public boolean boolEmailAvailableCheck(String email) {
