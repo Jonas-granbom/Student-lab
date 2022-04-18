@@ -1,6 +1,6 @@
-#JONAS-Student-Management
+# JONAS-Student-Management
 
-##Java-EE (Jakarta-EE) CRUD-application for student management.
+## Java-EE (Jakarta-EE) CRUD-application for student management.
 
 
 
@@ -13,7 +13,7 @@ Subjects: http://localhost:8080/student-management-system/api/v1/subjects
 Teachers: http://localhost:8080/student-management-system/api/v1/teachers
 
 
-####JSON-format to create a student:
+#### JSON-format to create a student:
 ```yaml
 {
   "firstName": "Lars",
@@ -24,13 +24,13 @@ Teachers: http://localhost:8080/student-management-system/api/v1/teachers
 ```
 All fields but phonenumber is required, and email has to be unique.
 
-####JSON-format to create a subject
+#### JSON-format to create a subject
 ```yaml
 {
   "subject" : "History 101",
 }
 ```
-####JSON-format to create a teacher
+#### JSON-format to create a teacher
 ```yaml
 {
   "name" : "Bengt-åke",
