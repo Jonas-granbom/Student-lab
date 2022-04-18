@@ -1,6 +1,7 @@
 package se.iths.rest;
 
 
+import se.iths.customresponse.HttpResponse;
 import se.iths.entity.Student;
 import se.iths.entity.Subject;
 import se.iths.service.StudentService;
@@ -23,22 +24,19 @@ public class StudentRest {
     public Response createStudent(Student student) {
         if (studentService.boolEmailAvailableCheck(student.getEmail())) {
             return Response.status(Response.Status.CONFLICT)
-                    .entity("Email is already in use")
-                    .type(MediaType.TEXT_PLAIN_TYPE)
+                    .entity(new HttpResponse("Conflict", "Email already taken", 409))
                     .build();
         }
         try {
             studentService.createStudent(student);
         } catch (Exception e) {
             throw new WebApplicationException(Response.status(Response.Status.NOT_ACCEPTABLE)
-                    .entity("All fields are required, Exception: " + e)
-                    .type(MediaType.TEXT_PLAIN_TYPE)
+                    .entity(new HttpResponse("Not Acceptable", "All fields are required", 406))
                     .build());
         }
 
         return Response.ok(student)
-                .entity("Student created")
-                .type(MediaType.TEXT_PLAIN_TYPE)
+                .entity(new HttpResponse("Ok", "Student created", 200))
                 .build();
     }
 
@@ -48,8 +46,7 @@ public class StudentRest {
         List<Student> foundStudents = studentService.findAllStudents();
         if (foundStudents.isEmpty()) {
             return Response.status(Response.Status.NOT_FOUND)
-                    .entity("No students in database")
-                    .type(MediaType.TEXT_PLAIN_TYPE)
+                    .entity(new HttpResponse("Not found", "No students found", 404))
                     .build();
         }
         return Response.ok(studentService.findAllStudents())
@@ -63,8 +60,7 @@ public class StudentRest {
         Student foundStudent = studentService.findStudentById(id);
         if (foundStudent == null) {
             throw new WebApplicationException(Response.status(Response.Status.NOT_FOUND)
-                    .entity("Student with ID " + id + " not found in database")
-                    .type(MediaType.TEXT_PLAIN_TYPE)
+                    .entity(new HttpResponse("Not found", "Student with id: " + id + " not found in database", 404))
                     .build());
         }
         return Response.ok(foundStudent)
@@ -75,10 +71,9 @@ public class StudentRest {
     @GET
     public Response getStudentByLastName(@QueryParam("lastname") String lastName) {
         List<Student> foundStudents = studentService.getStudentByLastName(lastName);
-        if (foundStudents.size() == 0) {
+        if (foundStudents.isEmpty()) {
             return Response.status(Response.Status.NOT_FOUND)
-                    .entity("No students with lastname " + lastName + " were found in the database")
-                    .type(MediaType.TEXT_PLAIN_TYPE)
+                    .entity(new HttpResponse("Not found", "No students with lastname: " + lastName + " were found in the in the database", 404))
                     .build();
         }
         return Response.ok(foundStudents)
@@ -89,11 +84,9 @@ public class StudentRest {
     @PATCH
     public Response updateStudent(@PathParam("id") Long id, Student student) {
         Student foundStudent = studentService.findStudentById(id);
-
         if (foundStudent == null) {
             return Response.status(Response.Status.NOT_FOUND)
-                    .entity("Student with ID: " + id + " is not currently in the database")
-                    .type(MediaType.TEXT_PLAIN_TYPE)
+                    .entity(new HttpResponse("Not found", "Student with id: " + id + " is not currently in the database", 404))
                     .build();
         }
         if (student.getFirstName() != null) foundStudent.setFirstName(student.getFirstName());
@@ -113,22 +106,22 @@ public class StudentRest {
         Student foundStudent = studentService.findStudentById(id);
         if (foundStudent == null) {
             return Response.status(Response.Status.NOT_FOUND)
-                    .entity("No student with ID:  " + id + " were found in the database").type(MediaType.TEXT_PLAIN_TYPE).build();
+                    .entity(new HttpResponse("Not found", "Student with id: " + id + " not found in database", 404))
+                    .build();
         }
         for (Subject subject : studentService.findAllSubjects()) {
             for (Student student : subject.getStudents()) {
                 if (student.getId() == foundStudent.getId()) {
                     throw new WebApplicationException(Response.status(Response.Status.CONFLICT)
-                            .entity("To delete a student assigned to a subject, first remove it from the subject")
-                            .type(MediaType.TEXT_PLAIN_TYPE)
+                            .entity(new HttpResponse("Conflict", "To delete a student assigned to a subject, first remove it from the subject", 409))
                             .build());
                 }
             }
         }
 
         studentService.deleteStudent(id);
-        return Response.ok().entity("Deleted student with ID: " + id)
-                .type(MediaType.TEXT_PLAIN_TYPE)
+        return Response.ok()
+                .entity(new HttpResponse("Ok", "Deleted student with id: " + id, 200))
                 .build();
     }
 }

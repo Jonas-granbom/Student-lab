@@ -1,5 +1,6 @@
 package se.iths.rest;
 
+import se.iths.customresponse.HttpResponse;
 import se.iths.entity.Subject;
 import se.iths.entity.Teacher;
 import se.iths.service.TeacherService;
@@ -25,63 +26,53 @@ public class TeacherRest {
             teacherService.createTeacher(teacher);
         } catch (ValidationException e) {
             throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST)
-                    .entity("Teacher needs to have a name, error: " + e)
-                    .type(MediaType.TEXT_PLAIN_TYPE)
+                    .entity(new HttpResponse("Bad request", "Teacher needs to have a name", 400))
                     .build());
         }
         return Response.ok()
-                .entity("Teacher created")
-                .type(MediaType.TEXT_PLAIN_TYPE)
+                .entity(new HttpResponse("Ok", "Teacher created", 200))
                 .build();
     }
 
     @Path("{id}")
     @PATCH
     public Response updateTeacher(@PathParam("id") Long id, @QueryParam("updatedname") String updatedName) {
-        Teacher foundTeacher = getTeacher(id);
-
+        Teacher foundTeacher = teacherNotFound(id);
         try {
             foundTeacher.setName(updatedName);
         } catch (ValidationException e) {
             throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST)
-                    .entity("Teacher needs to have a name, error: " + e)
-                    .type(MediaType.TEXT_PLAIN_TYPE)
+                    .entity(new HttpResponse("Bad request", "Teacher needs to have a name", 400))
                     .build());
         }
         teacherService.updateTeacher(foundTeacher);
         return Response.ok()
-                .entity("Teacher changed")
-                .type(MediaType.TEXT_PLAIN_TYPE)
+                .entity(new HttpResponse("Ok", "Teacher updated", 200))
                 .build();
     }
 
     @Path("{id}")
     @DELETE
     public Response deleteTeacher(@PathParam("id") Long id) {
-        getTeacher(id);
-
+        teacherNotFound(id);
         for (Subject subject : teacherService.findAllSubjects()) {
-            if (subject.getTeacher() != null) {
-                if (subject.getTeacher().getId() == id) {
-                    throw new WebApplicationException(Response.status(Response.Status.CONFLICT)
-                            .entity("This teacher seem to be assigned to a subject, please remove it before trying to delete.")
-                            .build());
-                }
+            if (subject.getTeacher() != null && subject.getTeacher().getId() == id) {
+                throw new WebApplicationException(Response.status(Response.Status.CONFLICT)
+                        .entity(new HttpResponse("Conflict", "This teacher seem to be assigned to a subject, please remove it before trying to delete.", 409))
+                        .build());
             }
         }
         teacherService.deleteTeacher(id);
         return Response.ok()
-                .entity("Teacher with id: " + id + "deleted from the database")
-                .type(MediaType.TEXT_PLAIN_TYPE)
+                .entity(new HttpResponse("Ok", "Teacher with id: " + id + "deleted from the database", 200))
                 .build();
     }
 
-    private Teacher getTeacher(Long id) {
+    private Teacher teacherNotFound(Long id) {
         Teacher foundTeacher = teacherService.findTeacherById(id);
         if (foundTeacher == null) {
             throw new WebApplicationException(Response.status(Response.Status.NOT_FOUND)
-                    .entity("Teacher with id: " + id + " not found in the database")
-                    .type(MediaType.TEXT_PLAIN_TYPE)
+                    .entity(new HttpResponse("Not found", "Teacher with id: " + id + " not found in the database", 404))
                     .build());
         }
         return foundTeacher;

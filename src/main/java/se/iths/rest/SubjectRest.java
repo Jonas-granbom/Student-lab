@@ -1,6 +1,7 @@
 package se.iths.rest;
 
 
+import se.iths.customresponse.HttpResponse;
 import se.iths.entity.Student;
 import se.iths.entity.Subject;
 import se.iths.entity.Teacher;
@@ -27,13 +28,11 @@ public class SubjectRest {
             subjectService.createSubject(subject);
         } catch (ValidationException e) {
             throw new WebApplicationException(Response.status(Response.Status.BAD_REQUEST)
-                    .entity("Subject needs to have a name, error: " + e)
-                    .type(MediaType.TEXT_PLAIN_TYPE)
+                    .entity(new HttpResponse("Bad request", "Subject name is mandatory", 400))
                     .build());
         }
         return Response.ok()
-                .entity("Subject created")
-                .type(MediaType.TEXT_PLAIN_TYPE)
+                .entity(new HttpResponse("Ok", "Subject created", 200))
                 .build();
     }
 
@@ -43,8 +42,8 @@ public class SubjectRest {
         List<Subject> foundSubjects = subjectService.findAllSubjects();
         if (foundSubjects.isEmpty()) {
             return Response.status(Response.Status.NOT_FOUND)
-                    .entity("No subjects in database")
-                    .type(MediaType.TEXT_PLAIN_TYPE).build();
+                    .entity(new HttpResponse("Not found", "No subjects were found in the database", 404))
+                    .build();
         }
         return Response.ok(subjectService.findAllSubjects())
                 .build();
@@ -53,7 +52,7 @@ public class SubjectRest {
     @Path("query")
     @GET
     public Response getStudentsAndTeacherFromSubject(@QueryParam("subjectid") Long id) {
-        Subject foundSubject = getSubject(id);
+        Subject foundSubject = subjectNotFound(id);
         return Response.ok(foundSubject)
                 .build();
     }
@@ -61,34 +60,29 @@ public class SubjectRest {
     @Path("addstudenttosubject")
     @GET
     public Response addStudentToSubject(@QueryParam("subjectid") Long subjectId, @QueryParam("studentid") Long studentId) {
-        Subject foundSubject = getSubject(subjectId);
-        getStudent(studentId);
-
+        Subject foundSubject = subjectNotFound(subjectId);
+        studentNotFound(studentId);
         for (Student student : foundSubject.getStudents()) {
             if (student.getId() == studentId) {
                 throw new WebApplicationException(Response.status(Response.Status.CONFLICT)
-                        .entity("Student with id " + studentId + "is already assigned to subject " + foundSubject.getSubject())
-                        .type(MediaType.TEXT_PLAIN_TYPE)
+                        .entity(new HttpResponse("Conflict", "Student with id: " + studentId + " already assigned to the subject", 409))
                         .build());
             }
         }
         subjectService.addStudentToSubject(subjectId, studentId);
         return Response.ok()
-                .entity("Student has been added to database successfully")
-                .type(MediaType.TEXT_PLAIN_TYPE)
+                .entity(new HttpResponse("Ok", "Student added to subject", 200))
                 .build();
     }
 
     @Path("addteachertosubject")
     @GET
     public Response addTeacherToSubject(@QueryParam("subjectid") Long subjectId, @QueryParam("teacherid") Long teacherId) {
-        getSubject(subjectId);
-        getTeacher(teacherId);
-
+        subjectNotFound(subjectId);
+        teacherNotFound(teacherId);
         subjectService.addTeacherToSubject(subjectId, teacherId);
         return Response.ok()
-                .entity("Teacher added to subject")
-                .type(MediaType.TEXT_PLAIN_TYPE)
+                .entity(new HttpResponse("Ok", "Teacher added to subject", 200))
                 .build();
     }
 
@@ -97,85 +91,72 @@ public class SubjectRest {
     public Response deleteSubject(@PathParam("id") Long id) {
         if (subjectService.findSubjectById(id) == null) {
             throw new WebApplicationException(Response.status(Response.Status.NOT_FOUND)
-                    .entity("No subject with id: " + id + "found.")
-                    .type(MediaType.TEXT_PLAIN_TYPE)
+                    .entity(new HttpResponse("Not found", "Subject with id: " + id + " were found in the database", 404))
                     .build());
         }
         subjectService.deleteSubject(id);
         return Response.ok()
-                .entity("Subject with id: " + id + "deleted.")
-                .type(MediaType.TEXT_PLAIN_TYPE)
+                .entity(new HttpResponse("Ok", "Deleted subject with id: " + id, 200))
                 .build();
     }
 
     @Path("removestudent")
     @DELETE
     public Response removeStudentFromSubject(@QueryParam("subjectid") Long subjectId, @QueryParam("studentid") Long studentId) {
-        Subject foundSubject = getSubject(subjectId);
-        getStudent(studentId);
-
+        Subject foundSubject = subjectNotFound(subjectId);
+        studentNotFound(studentId);
         for (Student student : foundSubject.getStudents()) {
             if (student.getId() == studentId) {
                 subjectService.removeStudentFromSubject(subjectId, studentId);
                 return Response.ok()
-                        .entity("Student with id: " + studentId + " removed from subject.")
-                        .type(MediaType.TEXT_PLAIN_TYPE)
+                        .entity(new HttpResponse("Ok", "Deleted student with id: " + studentId + " from the subject", 200))
                         .build();
             }
         }
         throw new WebApplicationException(Response.status(Response.Status.NOT_FOUND)
-                .entity("Student with id " + studentId + " is not assigned to subject " + foundSubject.getSubject())
-                .type(MediaType.TEXT_PLAIN_TYPE)
+                .entity(new HttpResponse("Not found", "Student with id: " + studentId + " is not assigned to subject: " + foundSubject.getSubject(), 404))
                 .build());
     }
 
     @Path("removeteacher")
     @DELETE
     public Response removeTeacherFromSubject(@QueryParam("subjectid") Long subjectId, @QueryParam("teacherid") Long teacherId) {
-        Subject foundSubject = getSubject(subjectId);
-        getTeacher(teacherId);
-
-        if (foundSubject.getTeacher() != null) {
-            if (foundSubject.getTeacher().getId() == teacherId) {
-                subjectService.removeTeacherFromSubject(subjectId, teacherId);
-                return Response.ok()
-                        .entity("Teacher removed from the subject.")
-                        .type(MediaType.TEXT_PLAIN_TYPE)
-                        .build();
-            }
+        Subject foundSubject = subjectNotFound(subjectId);
+        teacherNotFound(teacherId);
+        if (foundSubject.getTeacher() != null && foundSubject.getTeacher().getId() == teacherId) {
+            subjectService.removeTeacherFromSubject(subjectId, teacherId);
+            return Response.ok()
+                    .entity(new HttpResponse("Ok", "Teacher removed from subject", 200))
+                    .build();
         }
         throw new WebApplicationException(Response.status(Response.Status.NOT_FOUND)
-                .entity("Teacher with the id: " + teacherId + "is not assigned to that subject")
-                .type(MediaType.TEXT_PLAIN_TYPE)
+                .entity(new HttpResponse("Not found", "Teacher with the id: " + teacherId + "is not assigned to that subject", 404))
                 .build());
     }
 
-    private void getTeacher(Long teacherId) {
+    private void teacherNotFound(Long teacherId) {
         Teacher foundTeacher = subjectService.findTeacherById(teacherId);
         if (foundTeacher == null) {
             throw new WebApplicationException(Response.status(Response.Status.NOT_FOUND)
-                    .entity("Teacher with id: " + teacherId + " not found in the database")
-                    .type(MediaType.TEXT_PLAIN_TYPE)
+                    .entity(new HttpResponse("Not found", "Teacher with id: " + teacherId + " not found in the database", 404))
                     .build());
         }
     }
 
-    private void getStudent(Long studentId) {
+    private void studentNotFound(Long studentId) {
         Student foundStudent = subjectService.findStudentById(studentId);
         if (foundStudent == null) {
             throw new WebApplicationException(Response.status(Response.Status.NOT_FOUND)
-                    .entity("Student with id: " + studentId + " not found in the database")
-                    .type(MediaType.TEXT_PLAIN_TYPE)
+                    .entity(new HttpResponse("Not found", "Student with id: " + studentId + " not found in the database", 404))
                     .build());
         }
     }
 
-    private Subject getSubject(Long subjectId) {
+    private Subject subjectNotFound(Long subjectId) {
         Subject foundSubject = subjectService.findSubjectById(subjectId);
         if (foundSubject == null) {
             throw new WebApplicationException(Response.status(Response.Status.NOT_FOUND)
-                    .entity("Subject with id: " + subjectId + " not found in the database")
-                    .type(MediaType.TEXT_PLAIN_TYPE)
+                    .entity(new HttpResponse("Not found", "Subject with id: " + subjectId + " not found in the database", 404))
                     .build());
         }
         return foundSubject;
